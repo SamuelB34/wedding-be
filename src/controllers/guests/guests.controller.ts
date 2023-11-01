@@ -16,6 +16,28 @@ class GuestsController extends BaseController {
 		}
 	}
 
+	public getById = async (req: Request, res: Response, next: NextFunction) => {
+		try {
+			const id = req.params.id
+
+			// Check if the ID is valid
+			if (!mongoose.Types.ObjectId.isValid(id)) {
+				return this.respondInvalid(res, `Invalid ID`)
+			}
+
+			const guest = await guests.find({
+				_id: id,
+				deleted_at: { $exists: false },
+			})
+
+			if (!guest.length) return this.respondInvalid(res, `Guest not found`)
+
+			return this.respondSuccess(res, `Success`, guest)
+		} catch (err) {
+			next(err)
+		}
+	}
+
 	public create = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const body = req.body as CreateGuestDto
@@ -105,6 +127,35 @@ class GuestsController extends BaseController {
 				`Success`,
 				` Record deleted: ${id} 💥💥💥`
 			)
+		} catch (e) {}
+	}
+
+	public sawInvitation = async (req: Request, res: Response) => {
+		try {
+			const docs = await guests.countDocuments({
+				saw_invitation: true,
+				deleted_at: { $exists: false },
+			})
+			return this.respondSuccess(res, `Success`, docs)
+		} catch (e) {}
+	}
+
+	public assist = async (req: Request, res: Response) => {
+		try {
+			const docs = await guests.countDocuments({
+				assist: true,
+				deleted_at: { $exists: false },
+			})
+			return this.respondSuccess(res, `Success`, docs)
+		} catch (e) {}
+	}
+
+	public totalCount = async (req: Request, res: Response) => {
+		try {
+			const docs = await guests.countDocuments({
+				deleted_at: { $exists: false },
+			})
+			return this.respondSuccess(res, `Success`, docs)
 		} catch (e) {}
 	}
 }
