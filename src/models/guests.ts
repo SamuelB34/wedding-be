@@ -1,6 +1,6 @@
 import mongoose, { model } from "mongoose"
 
-interface GuestType {
+export interface GuestType {
 	first_name: string
 	middle_name?: string
 	last_name: string
@@ -14,6 +14,8 @@ interface GuestType {
 	created_at: string
 	updated_by?: string
 	updated_at?: string
+	deleted_by?: string
+	deleted_at?: string
 }
 
 const guestsSchema = new mongoose.Schema<GuestType>({
@@ -30,6 +32,8 @@ const guestsSchema = new mongoose.Schema<GuestType>({
 	created_by: { type: String, required: true },
 	updated_at: { type: String },
 	updated_by: { type: String },
+	deleted_at: { type: String },
+	deleted_by: { type: String },
 })
 
 const Guest = model<GuestType>("Guests", guestsSchema)

@@ -1,15 +1,12 @@
 import {
 	IsBoolean,
-	IsDate,
-	IsDateString,
 	IsEmail,
 	IsOptional,
 	IsPhoneNumber,
 	IsString,
 } from "class-validator"
-import { IsDateTime } from "../../../common/validators/IsDateTime"
 
-export class CreateGuestDto {
+export class UpdateGuestDto {
 	@IsString()
 	first_name!: string
 
