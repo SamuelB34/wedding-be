@@ -55,8 +55,9 @@ export abstract class BaseController {
 	 */
 	public respondInvalid(res: Response, error?: string) {
 		return res.status(400).send({
-			msg: error ?? null,
+			msg: null,
 			data: null,
+			error: error ?? null,
 		})
 	}
 

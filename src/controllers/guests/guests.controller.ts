@@ -22,9 +22,20 @@ class GuestsController extends BaseController {
 				created_at: formatDate(Date.now()),
 				created_by: "Admin",
 			}
+			const email = data.email_address
+			const phone = data.phone_number
+
+			// Check if email is repeated
+			const repeated_email = await guests.find({ email_address: email })
+			if (repeated_email.length)
+				return this.respondInvalid(res, `Email Address Repeated`)
+
+			// Check if phone number is repeated
+			const phone_repeated = await guests.find({ phone_number: phone })
+			if (phone_repeated.length)
+				return this.respondInvalid(res, `Phone Number Repeated`)
 
 			const newGuest = await guests.create(data)
-
 			if (!newGuest) return this.respondServerError(res)
 
 			return this.respondSuccess(res, `Success`, newGuest)
