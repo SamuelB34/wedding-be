@@ -3,6 +3,7 @@ import mongoose, { model } from "mongoose"
 export interface GroupsType {
 	name: string
 	guests: string[]
+	table: string[]
 
 	created_at: string
 	created_by: string
@@ -15,6 +16,7 @@ export interface GroupsType {
 const groupsSchema = new mongoose.Schema<GroupsType>({
 	name: { type: String, required: true },
 	guests: [{ type: mongoose.Schema.Types.ObjectId, ref: "Guests" }],
+	table: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tables" }],
 
 	created_at: { type: String, required: true },
 	created_by: { type: String, required: true },

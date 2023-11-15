@@ -132,21 +132,39 @@ class GuestsController extends BaseController {
 
 	public sawInvitation = async (req: Request, res: Response) => {
 		try {
-			const docs = await guests.countDocuments({
+			const saw_invitation = await guests.countDocuments({
 				saw_invitation: true,
 				deleted_at: { $exists: false },
 			})
-			return this.respondSuccess(res, `Success`, docs)
+
+			const total = await guests.countDocuments({
+				deleted_at: { $exists: false },
+			})
+
+			const data = {
+				count: saw_invitation,
+				total: total,
+			}
+			return this.respondSuccess(res, `Success`, data)
 		} catch (e) {}
 	}
 
 	public assist = async (req: Request, res: Response) => {
 		try {
-			const docs = await guests.countDocuments({
+			const assist = await guests.countDocuments({
 				assist: true,
 				deleted_at: { $exists: false },
 			})
-			return this.respondSuccess(res, `Success`, docs)
+
+			const total = await guests.countDocuments({
+				deleted_at: { $exists: false },
+			})
+
+			const data = {
+				count: assist,
+				total: total,
+			}
+			return this.respondSuccess(res, `Success`, data)
 		} catch (e) {}
 	}
 
