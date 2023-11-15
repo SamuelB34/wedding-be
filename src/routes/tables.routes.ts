@@ -10,4 +10,6 @@ router.get("/:id", TablesController.getById)
 
 router.post("/", dtoValidation(CreateTableDto), TablesController.create)
 
+router.delete("/:id", TablesController.delete)
+
 export default router

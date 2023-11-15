@@ -164,44 +164,48 @@ class TablesController extends BaseController {
 
 			if (!find_id) return this.respondInvalid(res, `Table not found`)
 
-			// Remove current guests group
+			// Remove current guests table
 			if (find_id[0]["guests"].length) {
-				await guests.updateMany(
+				const guests_list = await guests.updateMany(
 					{
 						_id: { $in: find_id[0]["guests"] },
 						deleted_at: { $exists: false },
 					},
-					{ $set: { table: [] } }
+					{
+						$set: {
+							table: [],
+							updated_at: formatDate(Date.now()),
+							updated_by: "Samuel Barragan",
+						},
+					}
 				)
+				if (!guests_list) return this.respondInvalid(res, `Guests not found`)
 			}
-
-			const guest = await groups.findByIdAndUpdate(id, {
-				deleted_at: formatDate(Date.now()),
-				deleted_by: "Samuel Barragan",
-			})
-
-			if (!guest) return this.respondInvalid(res, `Guests not found`)
 
 			// Remove current groups table
 			if (find_id[0]["groups"].length) {
-				await guests.updateMany(
+				const groups_list = await groups.updateMany(
 					{
 						_id: { $in: find_id[0]["groups"] },
 						deleted_at: { $exists: false },
-						updated_at: formatDate(Date.now()),
-						updated_by: "Samuel Barragan",
 					},
-					{ $set: { table: [] } }
+					{
+						$set: {
+							table: [],
+							updated_at: formatDate(Date.now()),
+							updated_by: "Samuel Barragan",
+						},
+					}
 				)
+				if (!groups_list) return this.respondInvalid(res, `Groups not found`)
 			}
 
-			const group = await groups.findByIdAndUpdate(id, {
+			const table = await tables.findByIdAndUpdate(id, {
 				deleted_at: formatDate(Date.now()),
 				deleted_by: "Samuel Barragan",
 			})
 
-			if (!group) return this.respondInvalid(res, `Group not found`)
-
+			if (!table) return this.respondInvalid(res, `Table not found`)
 			return this.respondSuccess(
 				res,
 				`Success`,
