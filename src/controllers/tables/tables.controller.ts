@@ -148,6 +148,67 @@ class TablesController extends BaseController {
 			next(err)
 		}
 	}
+
+	public delete = async (req: Request, res: Response) => {
+		try {
+			const id = req.params.id
+			// Check if the ID is valid
+			if (!mongoose.Types.ObjectId.isValid(id)) {
+				return this.respondInvalid(res, `Invalid ID`)
+			}
+
+			const find_id = await tables.find({
+				_id: id,
+				deleted_at: { $exists: false },
+			})
+
+			if (!find_id) return this.respondInvalid(res, `Table not found`)
+
+			// Remove current guests group
+			if (find_id[0]["guests"].length) {
+				await guests.updateMany(
+					{
+						_id: { $in: find_id[0]["guests"] },
+						deleted_at: { $exists: false },
+					},
+					{ $set: { table: [] } }
+				)
+			}
+
+			const guest = await groups.findByIdAndUpdate(id, {
+				deleted_at: formatDate(Date.now()),
+				deleted_by: "Samuel Barragan",
+			})
+
+			if (!guest) return this.respondInvalid(res, `Guests not found`)
+
+			// Remove current groups table
+			if (find_id[0]["groups"].length) {
+				await guests.updateMany(
+					{
+						_id: { $in: find_id[0]["groups"] },
+						deleted_at: { $exists: false },
+						updated_at: formatDate(Date.now()),
+						updated_by: "Samuel Barragan",
+					},
+					{ $set: { table: [] } }
+				)
+			}
+
+			const group = await groups.findByIdAndUpdate(id, {
+				deleted_at: formatDate(Date.now()),
+				deleted_by: "Samuel Barragan",
+			})
+
+			if (!group) return this.respondInvalid(res, `Group not found`)
+
+			return this.respondSuccess(
+				res,
+				`Success`,
+				` Record deleted: ${id} 💥💥💥`
+			)
+		} catch (e) {}
+	}
 }
 
 export default new TablesController()
