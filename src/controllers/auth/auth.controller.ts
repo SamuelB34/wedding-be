@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken")
 export interface LoginJwt {
 	user_id: string
 	user_username: string
+	user_role: string
 }
 
 class AuthController extends BaseController {
@@ -34,6 +35,7 @@ class AuthController extends BaseController {
 			const payload: LoginJwt = {
 				user_id: user[0]._id.toString(),
 				user_username: user[0].username,
+				user_role: user[0].role,
 			}
 
 			const token = {

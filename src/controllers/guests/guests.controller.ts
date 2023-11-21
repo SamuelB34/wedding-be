@@ -43,7 +43,7 @@ class GuestsController extends BaseController {
 		try {
 			const body = req.body as CreateGuestDto
 			// @ts-ignore
-			const user = req.user
+			const user = req.user!
 
 			const email: string = body.email_address
 			const phone: string = body.phone_number
@@ -70,7 +70,6 @@ class GuestsController extends BaseController {
 				created_at: formatDate(Date.now()),
 				created_by: user?.id,
 			}
-
 			const newGuest = await guests.create(data)
 			if (!newGuest) return this.respondServerError(res)
 
@@ -141,7 +140,7 @@ class GuestsController extends BaseController {
 
 			if (!find_id) return this.respondInvalid(res, `Guest not found`)
 
-			if (user.role !== "admin" && user.id !== id)
+			if (user.role !== "admin" && user.id !== find_id[0]["created_by"])
 				return this.respondInvalid(
 					res,
 					`Only admins and the one created the guest can update it`

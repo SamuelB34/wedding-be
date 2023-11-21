@@ -8,6 +8,7 @@ import { formatDate } from "../../middlewares/format"
 import { CreateTableDto } from "./dtos/create-table.dto"
 import { UpdateGroupDto } from "../groups/dtos/update-group.dto"
 import { UpdateTableDto } from "./dtos/update-table.dto"
+import { respondUnauthorized } from "../../common/auth/common"
 
 class TablesController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
@@ -43,11 +44,17 @@ class TablesController extends BaseController {
 
 	public create = async (req: Request, res: Response, next: NextFunction) => {
 		try {
+			// @ts-ignore
+			const user = req.user!
 			const body = req.body as CreateTableDto
 
 			const number: number = body.number
 			const body_guests: string[] = body.guests || []
 			const body_groups: string[] = body.groups || []
+
+			if (user?.role === "wedding-planner") {
+				return respondUnauthorized(res)
+			}
 
 			// Check if number is repeated
 			const number_repeated = await tables.find({
@@ -153,6 +160,8 @@ class TablesController extends BaseController {
 
 	public update = async (req: Request, res: Response, next: NextFunction) => {
 		try {
+			// @ts-ignore
+			const user = req.user!
 			const body = req.body as UpdateTableDto
 
 			const id = req.params.id
@@ -165,6 +174,12 @@ class TablesController extends BaseController {
 			})
 
 			if (!find_id.length) return this.respondInvalid(res, `Table Not Found`)
+
+			if (user?.role !== "admin" && id !== user?.id)
+				return this.respondInvalid(
+					res,
+					`Only admins and the one created the table can update it`
+				)
 
 			// If guests array contains ids
 			if (body_guests.length) {
@@ -261,6 +276,8 @@ class TablesController extends BaseController {
 
 	public delete = async (req: Request, res: Response) => {
 		try {
+			// @ts-ignore
+			const user = req.user!
 			const id = req.params.id
 			// Check if the ID is valid
 			if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -273,6 +290,12 @@ class TablesController extends BaseController {
 			})
 
 			if (!find_id) return this.respondInvalid(res, `Table not found`)
+
+			if (user?.role !== "admin" && id !== user?.id)
+				return this.respondInvalid(
+					res,
+					`Only admins and the one created the table can update it`
+				)
 
 			// Remove current guests table
 			if (find_id[0]["guests"].length) {

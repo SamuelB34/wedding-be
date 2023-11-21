@@ -6,6 +6,7 @@ import { CreateGroupDto } from "./dtos/create-group.dto"
 import { formatDate } from "../../middlewares/format"
 import guests from "../../models/guests"
 import { UpdateGroupDto } from "./dtos/update-group.dto"
+import { respondUnauthorized } from "../../common/auth/common"
 
 class GroupsController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
@@ -69,7 +70,13 @@ class GroupsController extends BaseController {
 
 	public create = async (req: Request, res: Response, next: NextFunction) => {
 		try {
+			// @ts-ignore
+			const user = req.user!
 			const body = req.body as CreateGroupDto
+
+			if (user?.role === "wedding-planner") {
+				return respondUnauthorized(res)
+			}
 
 			const name: string = body.name
 			const body_guests: string[] = body.guests
@@ -136,6 +143,8 @@ class GroupsController extends BaseController {
 
 	public update = async (req: Request, res: Response) => {
 		try {
+			// @ts-ignore
+			const user = req.user!
 			const body = req.body as UpdateGroupDto
 			const id = req.params.id
 
@@ -153,6 +162,12 @@ class GroupsController extends BaseController {
 			})
 
 			if (!find_id) return this.respondInvalid(res, `Group not found`)
+
+			if (user?.role !== "admin" && id !== user?.id)
+				return this.respondInvalid(
+					res,
+					`Only admins and the one created the group can update it`
+				)
 
 			// Remove current guests group
 			if (find_id[0]["guests"].length) {
@@ -220,11 +235,20 @@ class GroupsController extends BaseController {
 
 	public delete = async (req: Request, res: Response) => {
 		try {
+			// @ts-ignore
+			const user = req.user!
 			const id = req.params.id
+
 			// Check if the ID is valid
 			if (!mongoose.Types.ObjectId.isValid(id)) {
 				return this.respondInvalid(res, `Invalid ID`)
 			}
+
+			if (user.role !== "admin" && user.id !== id)
+				return this.respondInvalid(
+					res,
+					`Only admins and the one created the group can update it`
+				)
 
 			const find_id = await groups.find({
 				_id: id,
