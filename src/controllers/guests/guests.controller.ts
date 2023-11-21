@@ -1,10 +1,11 @@
 import guests, { GuestType } from "../../models/guests"
 import { BaseController } from "../base.controller"
-import { NextFunction, Request, Response } from "express"
+import { Request, Response, NextFunction } from "express"
 import { CreateGuestDto } from "./dtos/create-guest.dto"
 import { formatDate } from "../../middlewares/format"
 import { UpdateGuestDto } from "./dtos/update-guest.dto"
 import mongoose from "mongoose"
+import { respondUnauthorized } from "../../common/auth/common"
 
 class GuestsController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
@@ -41,9 +42,15 @@ class GuestsController extends BaseController {
 	public create = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const body = req.body as CreateGuestDto
+			// @ts-ignore
+			const user = req.user
 
 			const email: string = body.email_address
 			const phone: string = body.phone_number
+
+			if (user?.role === "wedding-planner") {
+				return respondUnauthorized(res)
+			}
 
 			// Check if email is repeated
 			const email_repeated = await guests.find({
@@ -61,7 +68,7 @@ class GuestsController extends BaseController {
 			let data = {
 				...body,
 				created_at: formatDate(Date.now()),
-				created_by: "Admin",
+				created_by: user?.id,
 			}
 
 			const newGuest = await guests.create(data)
@@ -77,6 +84,8 @@ class GuestsController extends BaseController {
 		try {
 			const body = req.body as UpdateGuestDto
 			const id = req.params.id
+			// @ts-ignore
+			const user = req.user
 
 			// Check if the ID is valid
 			if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -90,7 +99,21 @@ class GuestsController extends BaseController {
 
 			if (!find_id) return this.respondInvalid(res, `Guest not found`)
 
-			const guest = await guests.findByIdAndUpdate(id, body)
+			const guest_id = find_id[0].created_by
+
+			if (user?.role !== "admin" && guest_id !== user?.id)
+				return this.respondInvalid(
+					res,
+					`Only admins and the one created the guest can update it`
+				)
+
+			const data = {
+				...body,
+				updated_by: user.id,
+				updated_at: formatDate(Date.now()),
+			}
+
+			const guest = await guests.findByIdAndUpdate(id, data)
 
 			if (!guest) return this.respondInvalid(res, `Guest not found`)
 
@@ -103,6 +126,9 @@ class GuestsController extends BaseController {
 	public delete = async (req: Request, res: Response) => {
 		try {
 			const id = req.params.id
+			// @ts-ignore
+			const user = req.user!
+
 			// Check if the ID is valid
 			if (!mongoose.Types.ObjectId.isValid(id)) {
 				return this.respondInvalid(res, `Invalid ID`)
@@ -115,9 +141,15 @@ class GuestsController extends BaseController {
 
 			if (!find_id) return this.respondInvalid(res, `Guest not found`)
 
+			if (user.role !== "admin" && user.id !== id)
+				return this.respondInvalid(
+					res,
+					`Only admins and the one created the guest can update it`
+				)
+
 			const guest = await guests.findByIdAndUpdate(id, {
 				deleted_at: formatDate(Date.now()),
-				deleted_by: "Samuel Barragan",
+				deleted_by: user.id,
 			})
 
 			if (!guest) return this.respondInvalid(res, `Guest not found`)

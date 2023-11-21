@@ -6,7 +6,7 @@ export enum UserRole {
 	WEDDING_PLANNER = "wedding-planner",
 }
 
-export interface GroupsType {
+export interface UserType {
 	first_name: string
 	middle_name?: string
 	last_name: string
@@ -23,7 +23,7 @@ export interface GroupsType {
 	deleted_by?: string
 }
 
-const usersSchema = new mongoose.Schema<GroupsType>({
+const usersSchema = new mongoose.Schema<UserType>({
 	first_name: { type: String, required: true },
 	middle_name: { type: String },
 	last_name: { type: String, required: true },
@@ -45,6 +45,6 @@ const usersSchema = new mongoose.Schema<GroupsType>({
 	deleted_by: { type: String },
 })
 
-const User = model<GroupsType>("Users", usersSchema)
+const User = model<UserType>("Users", usersSchema)
 
 export default User
