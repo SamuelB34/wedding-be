@@ -1,17 +1,14 @@
 {
   "compilerOptions": {
     "experimentalDecorators": true,
-    "target": "ES2021",
+    "emitDecoratorMetadata": true,
+    "target": "es5",
     "module": "commonjs",
     "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": false,
-    "types": [
-      "node",
-      "jest"
-    ],
     "sourceMap": true,
     "typeRoots": [
       "src/custom_typings"
