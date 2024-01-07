@@ -1,7 +1,6 @@
 import { BaseController } from "../base.controller"
 import { NextFunction, Request, Response } from "express"
 import users from "../../models/users"
-import { LoginDto } from "./dtos/login.dto"
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 
@@ -14,7 +13,7 @@ export interface LoginJwt {
 class AuthController extends BaseController {
 	public login = async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			const body: LoginDto = req.body as LoginDto
+			const body = req.body
 			const password: string = body.password
 
 			const user = await users.find({
