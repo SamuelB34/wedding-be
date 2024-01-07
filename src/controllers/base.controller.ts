@@ -13,17 +13,6 @@ export abstract class BaseController {
 			data: data ?? null,
 		})
 	}
-
-	/**
-	 * Returns success (200), attaching a file
-	 * @param res
-	 * @param filename
-	 * @param file
-	 */
-	public respondFile<T>(res: Response, filename: string, file: BlobPart) {
-		return res.status(200).attachment(filename).send(file)
-	}
-
 	/**
 	 * Returns not found (404)
 	 * @param res
