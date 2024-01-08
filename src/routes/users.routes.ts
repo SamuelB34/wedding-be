@@ -5,7 +5,7 @@ import { CreateUserDto } from "../controllers/users/dtos/create-user.dto"
 
 const router = express.Router()
 
-router.post("/", dtoValidation(CreateUserDto), UsersController.create)
+router.post("/", UsersController.create)
 
 router.delete("/:id", UsersController.delete)
 

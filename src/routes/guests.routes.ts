@@ -17,14 +17,14 @@ router.get("/:id", authLoggedUser, GuestsController.getById)
 router.post(
 	"/",
 	authLoggedUser,
-	dtoValidation(CreateGuestDto),
+	// dtoValidation(CreateGuestDto),
 	GuestsController.create
 )
 
 router.put(
 	"/:id",
 	authLoggedUser,
-	dtoValidation(UpdateGuestDto),
+	// dtoValidation(UpdateGuestDto),
 	GuestsController.update
 )
 
