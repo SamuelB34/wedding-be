@@ -14,7 +14,7 @@
       "src/custom_typings"
     ]
   },
-  //"include": ["**/*.ts"],
+  "include": ["src/**/*.ts"],
   //"exclude": ["node_modules"],
   "files": ["src/custom_typings/express.d.ts"]
 }

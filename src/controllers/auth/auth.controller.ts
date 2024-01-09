@@ -12,6 +12,7 @@ export interface LoginJwt {
 
 class AuthController extends BaseController {
 	public login = async (req: Request, res: Response, next: NextFunction) => {
+		console.log("HELLO WORLD")
 		try {
 			const body = req.body
 			const password: string = body.password

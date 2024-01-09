@@ -1,6 +1,6 @@
 import dotenv from "dotenv"
-import db from "./src/database/db"
-import app from "./src/app"
+import db from "./database/db"
+import app from "./app"
 import * as path from "path"
 
 //For env File
