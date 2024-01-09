@@ -1,4 +1,8 @@
-import { getUserFromJWT, respondUnauthorized } from "./common"
+import {
+	getUserFromJWT,
+	respondUnauthenticated,
+	respondUnauthorized,
+} from "./common"
 import { Request, Response, NextFunction } from "express"
 import users from "../../models/users"
 
@@ -20,6 +24,8 @@ export const authLoggedUser = async (
 	if (!user.length) return respondUnauthorized(res)
 
 	const user_logged = user[0]
+
+	if (!user_logged.authenticated) return respondUnauthenticated(res)
 
 	// Load user in the
 	// @ts-ignore

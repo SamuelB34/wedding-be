@@ -12,7 +12,6 @@ export interface LoginJwt {
 
 class AuthController extends BaseController {
 	public login = async (req: Request, res: Response, next: NextFunction) => {
-		console.log("HELLO WORLD")
 		try {
 			const body = req.body
 			const password: string = body.password
@@ -40,7 +39,7 @@ class AuthController extends BaseController {
 
 			const token = {
 				id: user[0]._id,
-				jwt: jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "28d" }),
+				jwt: jwt.sign(payload, process.env.JWT_SECRET),
 			}
 
 			return this.respondSuccess(res, `Success`, token)

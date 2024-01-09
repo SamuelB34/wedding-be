@@ -39,3 +39,17 @@ export const respondUnauthorized = (res: Response) => {
 		error,
 	})
 }
+
+/**
+ * Responds with a generic unauthenticated message
+ * @param res
+ */
+export const respondUnauthenticated = (res: Response) => {
+	const error = `User unauthenticated, please contact support.`
+
+	return res.status(401).send({
+		msg: null,
+		data: null,
+		error,
+	})
+}

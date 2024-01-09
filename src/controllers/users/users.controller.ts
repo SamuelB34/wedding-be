@@ -4,9 +4,41 @@ import mongoose from "mongoose"
 import { formatDate } from "../../middlewares/format"
 import { CreateUserDto } from "./dtos/create-user.dto"
 import users from "../../models/users"
+import guests from "../../models/guests"
 const bcrypt = require("bcrypt")
 
 class UsersController extends BaseController {
+	public getById = async (req: Request, res: Response, next: NextFunction) => {
+		try {
+			const id = req.params.id
+
+			// Check if the ID is valid
+			if (!mongoose.Types.ObjectId.isValid(id)) {
+				return this.respondInvalid(res, `Invalid ID`)
+			}
+
+			const guest = await users.find({
+				_id: id,
+				deleted_at: { $exists: false },
+			})
+
+			if (!guest.length) return this.respondInvalid(res, `User not found`)
+
+			const data = {
+				_id: id,
+				first_name: guest[0].first_name,
+				middle_name: guest[0].middle_name || "",
+				last_name: guest[0].last_name,
+				username: guest[0].username,
+				authenticated: guest[0].authenticated,
+			}
+
+			return this.respondSuccess(res, `Success`, data)
+		} catch (err) {
+			next(err)
+		}
+	}
+
 	public create = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const body = req.body as CreateUserDto
