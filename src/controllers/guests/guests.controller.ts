@@ -14,48 +14,127 @@ class GuestsController extends BaseController {
 			const query_params: any = req.query
 
 			const skipRecords = (+query_params.p - 1) * +query_params.pp
+			const filter = query_params.filter
+			let filter_users = []
 
 			if (query_params.search) {
-				const docs: any = await guests
-					.find({
-						$or: [
-							{ first_name: { $regex: query_params.search, $options: "i" } },
-							{ middle_name: { $regex: query_params.search, $options: "i" } },
-							{ last_name: { $regex: query_params.search, $options: "i" } },
-						],
-						deleted_at: { $exists: false },
-					})
-					.skip(+skipRecords)
-					.limit(+query_params.pp || 30)
-
-				let data: any[] = []
-
-				if (docs.length) {
-					for (const doc of docs) {
-						const user = await users.find({
-							_id: doc.created_by,
+				if (filter && filter !== "all") {
+					if (filter === "barragan.m") {
+						filter_users = [
+							"659c4d528854328da35719c8",
+							"659c4d788854328da35719cc",
+						]
+					} else if (filter === "araiza.s") {
+						filter_users = [
+							"659c4de08854328da35719d0",
+							"659c4dfc8854328da35719d4",
+						]
+					} else {
+						filter_users = [
+							"659c4ca18854328da35719c4",
+							"659a14f1f429caac82b1f61a",
+						]
+					}
+					const docs: any = await guests
+						.find({
+							$or: [
+								{ first_name: { $regex: query_params.search, $options: "i" } },
+								{ middle_name: { $regex: query_params.search, $options: "i" } },
+								{ last_name: { $regex: query_params.search, $options: "i" } },
+							],
+							created_by: { $in: filter_users },
 							deleted_at: { $exists: false },
 						})
+						.skip(+skipRecords)
+						.limit(+query_params.pp || 30)
+					let data: any[] = []
 
-						if (!user.length) return this.respondInvalid(res, `User not found`)
-
-						data.push({
-							...doc["_doc"],
-							_id: doc["_doc"]._id,
-							created_by: {
+					if (docs.length) {
+						for (const doc of docs) {
+							const user = await users.find({
 								_id: doc.created_by,
-								username: user[0].username,
-							},
-						})
-					}
-				} else {
-					data = docs
-				}
+								deleted_at: { $exists: false },
+							})
 
-				return this.respondSuccess(res, `Success`, data)
+							if (!user.length)
+								return this.respondInvalid(res, `User not found`)
+
+							data.push({
+								...doc["_doc"],
+								_id: doc["_doc"]._id,
+								created_by: {
+									_id: doc.created_by,
+									username: user[0].username,
+								},
+							})
+						}
+					} else {
+						data = docs
+					}
+
+					return this.respondSuccess(res, `Success`, data)
+				} else {
+					const docs: any = await guests
+						.find({
+							$or: [
+								{ first_name: { $regex: query_params.search, $options: "i" } },
+								{ middle_name: { $regex: query_params.search, $options: "i" } },
+								{ last_name: { $regex: query_params.search, $options: "i" } },
+							],
+							deleted_at: { $exists: false },
+						})
+						.skip(+skipRecords)
+						.limit(+query_params.pp || 30)
+
+					let data: any[] = []
+
+					if (docs.length) {
+						for (const doc of docs) {
+							const user = await users.find({
+								_id: doc.created_by,
+								deleted_at: { $exists: false },
+							})
+
+							if (!user.length)
+								return this.respondInvalid(res, `User not found`)
+
+							data.push({
+								...doc["_doc"],
+								_id: doc["_doc"]._id,
+								created_by: {
+									_id: doc.created_by,
+									username: user[0].username,
+								},
+							})
+						}
+					} else {
+						data = docs
+					}
+
+					return this.respondSuccess(res, `Success`, data)
+				}
 			} else {
+				if (filter === "barragan.m") {
+					filter_users = [
+						"659c4d528854328da35719c8",
+						"659c4d788854328da35719cc",
+					]
+				} else if (filter === "araiza.s") {
+					filter_users = [
+						"659c4de08854328da35719d0",
+						"659c4dfc8854328da35719d4",
+					]
+				} else {
+					filter_users = [
+						"659c4ca18854328da35719c4",
+						"659a14f1f429caac82b1f61a",
+					]
+				}
 				const docs: any = await guests
-					.find({ deleted_at: { $exists: false } })
+					.find({
+						deleted_at: { $exists: false },
+						created_by: { $in: filter_users },
+					})
 					.skip(+skipRecords)
 					.limit(+query_params.pp || 30)
 
@@ -97,24 +176,95 @@ class GuestsController extends BaseController {
 	) => {
 		try {
 			const query_params: any = req.query
+			const filter = query_params.filter
+			let filter_users = []
 
 			if (query_params.search) {
-				const docs = await guests.countDocuments({
-					$or: [
-						{ first_name: { $regex: query_params.search, $options: "i" } },
-						{ middle_name: { $regex: query_params.search, $options: "i" } },
-						{ last_name: { $regex: query_params.search, $options: "i" } },
-					],
-					deleted_at: { $exists: false },
-				})
-
-				return this.respondSuccess(res, `Success`, { total_count: docs })
+				if (filter && filter !== "all") {
+					if (filter === "barragan.m") {
+						filter_users = [
+							"659c4d528854328da35719c8",
+							"659c4d788854328da35719cc",
+						]
+					} else if (filter === "araiza.s") {
+						filter_users = [
+							"659c4de08854328da35719d0",
+							"659c4dfc8854328da35719d4",
+						]
+					} else {
+						filter_users = [
+							"659c4ca18854328da35719c4",
+							"659a14f1f429caac82b1f61a",
+						]
+					}
+					const docs = await guests.countDocuments({
+						$or: [
+							{ first_name: { $regex: query_params.search, $options: "i" } },
+							{ middle_name: { $regex: query_params.search, $options: "i" } },
+							{ last_name: { $regex: query_params.search, $options: "i" } },
+						],
+						created_by: { $in: filter_users },
+						deleted_at: { $exists: false },
+					})
+					return this.respondSuccess(res, `Success`, { total_count: docs })
+				} else {
+					if (filter === "barragan.m") {
+						filter_users = [
+							"659c4d528854328da35719c8",
+							"659c4d788854328da35719cc",
+						]
+					} else if (filter === "araiza.s") {
+						filter_users = [
+							"659c4de08854328da35719d0",
+							"659c4dfc8854328da35719d4",
+						]
+					} else {
+						filter_users = [
+							"659c4ca18854328da35719c4",
+							"659a14f1f429caac82b1f61a",
+						]
+					}
+					const docs = await guests.countDocuments({
+						$or: [
+							{ first_name: { $regex: query_params.search, $options: "i" } },
+							{ middle_name: { $regex: query_params.search, $options: "i" } },
+							{ last_name: { $regex: query_params.search, $options: "i" } },
+						],
+						created_by: { $in: filter_users },
+						deleted_at: { $exists: false },
+					})
+					return this.respondSuccess(res, `Success`, { total_count: docs })
+				}
 			} else {
-				const docs = await guests.countDocuments({
-					deleted_at: { $exists: false },
-				})
+				if (filter === "barragan.m") {
+					filter_users = [
+						"659c4d528854328da35719c8",
+						"659c4d788854328da35719cc",
+					]
+				} else if (filter === "araiza.s") {
+					filter_users = [
+						"659c4de08854328da35719d0",
+						"659c4dfc8854328da35719d4",
+					]
+				} else {
+					filter_users = [
+						"659c4ca18854328da35719c4",
+						"659a14f1f429caac82b1f61a",
+					]
+				}
+				if (filter && filter !== "all") {
+					const docs = await guests.countDocuments({
+						deleted_at: { $exists: false },
+						created_by: { $in: filter_users },
+					})
+					return this.respondSuccess(res, `Success`, { total_count: docs })
+				} else {
+					const docs = await guests.countDocuments({
+						deleted_at: { $exists: false },
+					})
 
-				return this.respondSuccess(res, `Success`, { total_count: docs })
+					return this.respondSuccess(res, `Success`, { total_count: docs })
+				}
 			}
 		} catch (err) {
 			next(err)
