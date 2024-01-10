@@ -6,6 +6,7 @@ import { formatDate } from "../../middlewares/format"
 import { UpdateGuestDto } from "./dtos/update-guest.dto"
 import mongoose from "mongoose"
 import { respondUnauthorized } from "../../common/auth/common"
+import users from "../../models/users"
 
 class GuestsController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
@@ -15,7 +16,7 @@ class GuestsController extends BaseController {
 			const skipRecords = (+query_params.p - 1) * +query_params.pp
 
 			if (query_params.search) {
-				const docs = await guests
+				const docs: any = await guests
 					.find({
 						$or: [
 							{ first_name: { $regex: query_params.search, $options: "i" } },
@@ -27,14 +28,62 @@ class GuestsController extends BaseController {
 					.skip(+skipRecords)
 					.limit(+query_params.pp || 30)
 
-				return this.respondSuccess(res, `Success`, docs)
+				let data: any[] = []
+
+				if (docs.length) {
+					for (const doc of docs) {
+						const user = await users.find({
+							_id: doc.created_by,
+							deleted_at: { $exists: false },
+						})
+
+						if (!user.length) return this.respondInvalid(res, `User not found`)
+
+						data.push({
+							...doc["_doc"],
+							_id: doc["_doc"]._id,
+							created_by: {
+								_id: doc.created_by,
+								username: user[0].username,
+							},
+						})
+					}
+				} else {
+					data = docs
+				}
+
+				return this.respondSuccess(res, `Success`, data)
 			} else {
-				const docs = await guests
+				const docs: any = await guests
 					.find({ deleted_at: { $exists: false } })
 					.skip(+skipRecords)
 					.limit(+query_params.pp || 30)
 
-				return this.respondSuccess(res, `Success`, docs)
+				let data: any[] = []
+
+				if (docs.length) {
+					for (const doc of docs) {
+						const user = await users.find({
+							_id: doc.created_by,
+							deleted_at: { $exists: false },
+						})
+
+						if (!user.length) return this.respondInvalid(res, `User not found`)
+
+						data.push({
+							...doc["_doc"],
+							_id: doc["_doc"]._id,
+							created_by: {
+								_id: doc.created_by,
+								username: user[0].username,
+							},
+						})
+					}
+				} else {
+					data = docs
+				}
+
+				return this.respondSuccess(res, `Success`, data)
 			}
 		} catch (err) {
 			next(err)
