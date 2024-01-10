@@ -10,8 +10,63 @@ import { respondUnauthorized } from "../../common/auth/common"
 class GuestsController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			const docs = await guests.find({ deleted_at: { $exists: false } })
-			return this.respondSuccess(res, `Success`, docs)
+			const query_params: any = req.query
+
+			const skipRecords = (+query_params.p - 1) * +query_params.pp
+
+			if (query_params.search) {
+				const docs = await guests
+					.find({
+						$or: [
+							{ first_name: { $regex: query_params.search, $options: "i" } },
+							{ middle_name: { $regex: query_params.search, $options: "i" } },
+							{ last_name: { $regex: query_params.search, $options: "i" } },
+						],
+						deleted_at: { $exists: false },
+					})
+					.skip(+skipRecords)
+					.limit(+query_params.pp || 30)
+
+				return this.respondSuccess(res, `Success`, docs)
+			} else {
+				const docs = await guests
+					.find({ deleted_at: { $exists: false } })
+					.skip(+skipRecords)
+					.limit(+query_params.pp || 30)
+
+				return this.respondSuccess(res, `Success`, docs)
+			}
+		} catch (err) {
+			next(err)
+		}
+	}
+
+	public totalCount = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const query_params: any = req.query
+
+			if (query_params.search) {
+				const docs = await guests.countDocuments({
+					$or: [
+						{ first_name: { $regex: query_params.search, $options: "i" } },
+						{ middle_name: { $regex: query_params.search, $options: "i" } },
+						{ last_name: { $regex: query_params.search, $options: "i" } },
+					],
+					deleted_at: { $exists: false },
+				})
+
+				return this.respondSuccess(res, `Success`, { total_count: docs })
+			} else {
+				const docs = await guests.countDocuments({
+					deleted_at: { $exists: false },
+				})
+
+				return this.respondSuccess(res, `Success`, { total_count: docs })
+			}
 		} catch (err) {
 			next(err)
 		}
@@ -196,15 +251,6 @@ class GuestsController extends BaseController {
 				total: total,
 			}
 			return this.respondSuccess(res, `Success`, data)
-		} catch (e) {}
-	}
-
-	public totalCount = async (req: Request, res: Response) => {
-		try {
-			const docs = await guests.countDocuments({
-				deleted_at: { $exists: false },
-			})
-			return this.respondSuccess(res, `Success`, docs)
 		} catch (e) {}
 	}
 }
