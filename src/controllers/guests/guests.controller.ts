@@ -46,6 +46,7 @@ class GuestsController extends BaseController {
 							deleted_at: { $exists: false },
 						})
 						.skip(+skipRecords)
+						.sort({ created_at: -1 })
 						.limit(+query_params.pp || 30)
 					let data: any[] = []
 
