@@ -46,8 +46,9 @@ class GuestsController extends BaseController {
 							deleted_at: { $exists: false },
 						})
 						.skip(+skipRecords)
-						.sort({ created_at: -1 })
 						.limit(+query_params.pp || 30)
+						.sort({ created_at: -1 })
+
 					let data: any[] = []
 
 					if (docs.length) {
@@ -86,6 +87,7 @@ class GuestsController extends BaseController {
 						})
 						.skip(+skipRecords)
 						.limit(+query_params.pp || 30)
+						.sort({ created_at: -1 })
 
 					let data: any[] = []
 
@@ -125,10 +127,19 @@ class GuestsController extends BaseController {
 						"659c4de08854328da35719d0",
 						"659c4dfc8854328da35719d4",
 					]
+				} else if (filter === "admins") {
+					filter_users = [
+						"659c4ca18854328da35719c4",
+						"659a14f1f429caac82b1f61a",
+					]
 				} else {
 					filter_users = [
 						"659c4ca18854328da35719c4",
 						"659a14f1f429caac82b1f61a",
+						"659c4de08854328da35719d0",
+						"659c4dfc8854328da35719d4",
+						"659c4d528854328da35719c8",
+						"659c4d788854328da35719cc",
 					]
 				}
 				const docs: any = await guests
@@ -138,6 +149,7 @@ class GuestsController extends BaseController {
 					})
 					.skip(+skipRecords)
 					.limit(+query_params.pp || 30)
+					.sort({ created_at: -1 })
 
 				let data: any[] = []
 
