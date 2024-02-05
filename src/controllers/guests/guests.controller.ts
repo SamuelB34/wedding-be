@@ -35,19 +35,57 @@ class GuestsController extends BaseController {
 							"659a14f1f429caac82b1f61a",
 						]
 					}
-					const docs: any = await guests
-						.find({
-							$or: [
-								{ first_name: { $regex: query_params.search, $options: "i" } },
-								{ middle_name: { $regex: query_params.search, $options: "i" } },
-								{ last_name: { $regex: query_params.search, $options: "i" } },
-							],
-							created_by: { $in: filter_users },
-							deleted_at: { $exists: false },
-						})
-						.skip(+skipRecords)
-						.limit(+query_params.pp || 30)
-						.sort({ created_at: -1 })
+					const docs: any = await guests.aggregate([
+						{
+							$match: {
+								$and: [
+									{ created_by: { $in: filter_users } },
+									{ deleted_at: { $exists: false } },
+								],
+								$expr: {
+									$regexMatch: {
+										input: {
+											$concat: [
+												"$first_name",
+												" ",
+												"$middle_name",
+												" ",
+												"$last_name",
+											],
+										},
+										regex: query_params.search,
+										options: "i",
+									},
+								},
+							},
+						},
+						{
+							$project: {
+								full_name: {
+									$concat: [
+										"$first_name",
+										" ",
+										"$middle_name",
+										" ",
+										"$last_name",
+									],
+								},
+								first_name: 1,
+								middle_name: 1,
+								last_name: 1,
+								created_at: 1,
+							},
+						},
+						{
+							$sort: { created_at: -1 },
+						},
+						{
+							$skip: +skipRecords,
+						},
+						{
+							$limit: +query_params.pp || 30,
+						},
+					])
 
 					let data: any[] = []
 
