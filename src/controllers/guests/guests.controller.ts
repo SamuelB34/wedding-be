@@ -35,57 +35,19 @@ class GuestsController extends BaseController {
 							"659a14f1f429caac82b1f61a",
 						]
 					}
-					const docs: any = await guests.aggregate([
-						{
-							$match: {
-								$and: [
-									{ created_by: { $in: filter_users } },
-									{ deleted_at: { $exists: false } },
-								],
-								$expr: {
-									$regexMatch: {
-										input: {
-											$concat: [
-												"$first_name",
-												" ",
-												"$middle_name",
-												" ",
-												"$last_name",
-											],
-										},
-										regex: query_params.search,
-										options: "i",
-									},
-								},
-							},
-						},
-						{
-							$project: {
-								full_name: {
-									$concat: [
-										"$first_name",
-										" ",
-										"$middle_name",
-										" ",
-										"$last_name",
-									],
-								},
-								first_name: 1,
-								middle_name: 1,
-								last_name: 1,
-								created_at: 1,
-							},
-						},
-						{
-							$sort: { created_at: -1 },
-						},
-						{
-							$skip: +skipRecords,
-						},
-						{
-							$limit: +query_params.pp || 30,
-						},
-					])
+					const docs: any = await guests
+						.find({
+							$or: [
+								{ first_name: { $regex: query_params.search, $options: "i" } },
+								{ middle_name: { $regex: query_params.search, $options: "i" } },
+								{ last_name: { $regex: query_params.search, $options: "i" } },
+							],
+							created_by: { $in: filter_users },
+							deleted_at: { $exists: false },
+						})
+						.skip(+skipRecords)
+						.limit(+query_params.pp || 30)
+						.sort({ created_at: -1 })
 
 					let data: any[] = []
 
@@ -502,6 +464,21 @@ class GuestsController extends BaseController {
 			}
 			return this.respondSuccess(res, `Success`, data)
 		} catch (e) {}
+	}
+
+	public sendWhatsApp = async (req: Request, res: Response) => {
+		const accountSid = "AC3a2c78623dd13b25fcd00b9dfb5c0025"
+		const authToken = "09bffcbd53cb9ca3c2300d4ea650bb14"
+		const client = require("twilio")(accountSid, authToken)
+
+		client.messages
+			.create({
+				body: "Este es un test para para probar el envio de mensajes. Ignoralo",
+				from: "whatsapp:+5216865782380",
+				to: "whatsapp:+5216865424276",
+			})
+			.then((message: any) => console.log(message.sid))
+			.done()
 	}
 }
 
