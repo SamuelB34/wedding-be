@@ -30,6 +30,6 @@ router.put(
 
 router.delete("/:id", authLoggedUser, GuestsController.delete)
 
-router.post("/", authLoggedUser, GuestsController.sendWhatsApp)
+router.post("/send", authLoggedUser, GuestsController.sendWhatsApp)
 
 export default router

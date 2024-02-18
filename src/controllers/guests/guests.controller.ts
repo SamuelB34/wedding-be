@@ -7,6 +7,11 @@ import { UpdateGuestDto } from "./dtos/update-guest.dto"
 import mongoose from "mongoose"
 import { respondUnauthorized } from "../../common/auth/common"
 import users from "../../models/users"
+import { findFormat } from "./find_format"
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID
+const authToken = process.env.TWILIO_AUTH_TOKEN
+const client = require("twilio")(accountSid, authToken)
 
 class GuestsController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
@@ -17,166 +22,37 @@ class GuestsController extends BaseController {
 			const filter = query_params.filter
 			let filter_users = []
 
-			if (query_params.search) {
-				if (filter && filter !== "all") {
-					if (filter === "barragan.m") {
-						filter_users = [
-							"659c4d528854328da35719c8",
-							"659c4d788854328da35719cc",
-						]
-					} else if (filter === "araiza.s") {
-						filter_users = [
-							"659c4de08854328da35719d0",
-							"659c4dfc8854328da35719d4",
-						]
-					} else {
-						filter_users = [
-							"659c4ca18854328da35719c4",
-							"659a14f1f429caac82b1f61a",
-						]
-					}
-					const docs: any = await guests
-						.find({
-							$or: [
-								{ first_name: { $regex: query_params.search, $options: "i" } },
-								{ middle_name: { $regex: query_params.search, $options: "i" } },
-								{ last_name: { $regex: query_params.search, $options: "i" } },
-							],
-							created_by: { $in: filter_users },
-							deleted_at: { $exists: false },
-						})
-						.skip(+skipRecords)
-						.limit(+query_params.pp || 30)
-						.sort({ created_at: -1 })
+			const docs: any = await guests
+				.find(findFormat(query_params))
+				.skip(+skipRecords)
+				.limit(+query_params.pp || 30)
+				.sort({ created_at: -1 })
 
-					let data: any[] = []
+			let data: any[] = []
 
-					if (docs.length) {
-						for (const doc of docs) {
-							const user = await users.find({
-								_id: doc.created_by,
-								deleted_at: { $exists: false },
-							})
+			if (docs.length) {
+				for (const doc of docs) {
+					const user = await users.find({
+						_id: doc.created_by,
+						deleted_at: { $exists: false },
+					})
 
-							if (!user.length)
-								return this.respondInvalid(res, `User not found`)
+					if (!user.length) return this.respondInvalid(res, `User not found`)
 
-							data.push({
-								...doc["_doc"],
-								_id: doc["_doc"]._id,
-								created_by: {
-									_id: doc.created_by,
-									username: user[0].username,
-								},
-							})
-						}
-					} else {
-						data = docs
-					}
-
-					return this.respondSuccess(res, `Success`, data)
-				} else {
-					const docs: any = await guests
-						.find({
-							$or: [
-								{ first_name: { $regex: query_params.search, $options: "i" } },
-								{ middle_name: { $regex: query_params.search, $options: "i" } },
-								{ last_name: { $regex: query_params.search, $options: "i" } },
-							],
-							deleted_at: { $exists: false },
-						})
-						.skip(+skipRecords)
-						.limit(+query_params.pp || 30)
-						.sort({ created_at: -1 })
-
-					let data: any[] = []
-
-					if (docs.length) {
-						for (const doc of docs) {
-							const user = await users.find({
-								_id: doc.created_by,
-								deleted_at: { $exists: false },
-							})
-
-							if (!user.length)
-								return this.respondInvalid(res, `User not found`)
-
-							data.push({
-								...doc["_doc"],
-								_id: doc["_doc"]._id,
-								created_by: {
-									_id: doc.created_by,
-									username: user[0].username,
-								},
-							})
-						}
-					} else {
-						data = docs
-					}
-
-					return this.respondSuccess(res, `Success`, data)
+					data.push({
+						...doc["_doc"],
+						_id: doc["_doc"]._id,
+						created_by: {
+							_id: doc.created_by,
+							username: user[0].username,
+						},
+					})
 				}
 			} else {
-				if (filter === "barragan.m") {
-					filter_users = [
-						"659c4d528854328da35719c8",
-						"659c4d788854328da35719cc",
-					]
-				} else if (filter === "araiza.s") {
-					filter_users = [
-						"659c4de08854328da35719d0",
-						"659c4dfc8854328da35719d4",
-					]
-				} else if (filter === "admins") {
-					filter_users = [
-						"659c4ca18854328da35719c4",
-						"659a14f1f429caac82b1f61a",
-					]
-				} else {
-					filter_users = [
-						"659c4ca18854328da35719c4",
-						"659a14f1f429caac82b1f61a",
-						"659c4de08854328da35719d0",
-						"659c4dfc8854328da35719d4",
-						"659c4d528854328da35719c8",
-						"659c4d788854328da35719cc",
-					]
-				}
-				const docs: any = await guests
-					.find({
-						deleted_at: { $exists: false },
-						created_by: { $in: filter_users },
-					})
-					.skip(+skipRecords)
-					.limit(+query_params.pp || 30)
-					.sort({ created_at: -1 })
-
-				let data: any[] = []
-
-				if (docs.length) {
-					for (const doc of docs) {
-						const user = await users.find({
-							_id: doc.created_by,
-							deleted_at: { $exists: false },
-						})
-
-						if (!user.length) return this.respondInvalid(res, `User not found`)
-
-						data.push({
-							...doc["_doc"],
-							_id: doc["_doc"]._id,
-							created_by: {
-								_id: doc.created_by,
-								username: user[0].username,
-							},
-						})
-					}
-				} else {
-					data = docs
-				}
-
-				return this.respondSuccess(res, `Success`, data)
+				data = docs
 			}
+
+			return this.respondSuccess(res, `Success`, data)
 		} catch (err) {
 			next(err)
 		}
@@ -189,96 +65,8 @@ class GuestsController extends BaseController {
 	) => {
 		try {
 			const query_params: any = req.query
-			const filter = query_params.filter
-			let filter_users = []
-
-			if (query_params.search) {
-				if (filter && filter !== "all") {
-					if (filter === "barragan.m") {
-						filter_users = [
-							"659c4d528854328da35719c8",
-							"659c4d788854328da35719cc",
-						]
-					} else if (filter === "araiza.s") {
-						filter_users = [
-							"659c4de08854328da35719d0",
-							"659c4dfc8854328da35719d4",
-						]
-					} else {
-						filter_users = [
-							"659c4ca18854328da35719c4",
-							"659a14f1f429caac82b1f61a",
-						]
-					}
-					const docs = await guests.countDocuments({
-						$or: [
-							{ first_name: { $regex: query_params.search, $options: "i" } },
-							{ middle_name: { $regex: query_params.search, $options: "i" } },
-							{ last_name: { $regex: query_params.search, $options: "i" } },
-						],
-						created_by: { $in: filter_users },
-						deleted_at: { $exists: false },
-					})
-					return this.respondSuccess(res, `Success`, { total_count: docs })
-				} else {
-					if (filter === "barragan.m") {
-						filter_users = [
-							"659c4d528854328da35719c8",
-							"659c4d788854328da35719cc",
-						]
-					} else if (filter === "araiza.s") {
-						filter_users = [
-							"659c4de08854328da35719d0",
-							"659c4dfc8854328da35719d4",
-						]
-					} else {
-						filter_users = [
-							"659c4ca18854328da35719c4",
-							"659a14f1f429caac82b1f61a",
-						]
-					}
-					const docs = await guests.countDocuments({
-						$or: [
-							{ first_name: { $regex: query_params.search, $options: "i" } },
-							{ middle_name: { $regex: query_params.search, $options: "i" } },
-							{ last_name: { $regex: query_params.search, $options: "i" } },
-						],
-						created_by: { $in: filter_users },
-						deleted_at: { $exists: false },
-					})
-					return this.respondSuccess(res, `Success`, { total_count: docs })
-				}
-			} else {
-				if (filter === "barragan.m") {
-					filter_users = [
-						"659c4d528854328da35719c8",
-						"659c4d788854328da35719cc",
-					]
-				} else if (filter === "araiza.s") {
-					filter_users = [
-						"659c4de08854328da35719d0",
-						"659c4dfc8854328da35719d4",
-					]
-				} else {
-					filter_users = [
-						"659c4ca18854328da35719c4",
-						"659a14f1f429caac82b1f61a",
-					]
-				}
-				if (filter && filter !== "all") {
-					const docs = await guests.countDocuments({
-						deleted_at: { $exists: false },
-						created_by: { $in: filter_users },
-					})
-					return this.respondSuccess(res, `Success`, { total_count: docs })
-				} else {
-					const docs = await guests.countDocuments({
-						deleted_at: { $exists: false },
-					})
-
-					return this.respondSuccess(res, `Success`, { total_count: docs })
-				}
-			}
+			const docs = await guests.countDocuments(findFormat(query_params))
+			return this.respondSuccess(res, `Success`, { total_count: docs })
 		} catch (err) {
 			next(err)
 		}
@@ -467,18 +255,21 @@ class GuestsController extends BaseController {
 	}
 
 	public sendWhatsApp = async (req: Request, res: Response) => {
-		const accountSid = "AC3a2c78623dd13b25fcd00b9dfb5c0025"
-		const authToken = "09bffcbd53cb9ca3c2300d4ea650bb14"
-		const client = require("twilio")(accountSid, authToken)
-
-		client.messages
-			.create({
-				body: "Este es un test para para probar el envio de mensajes. Ignoralo",
-				from: "whatsapp:+5216865782380",
-				to: "whatsapp:+5216865424276",
-			})
-			.then((message: any) => console.log(message.sid))
-			.done()
+		try {
+			client.messages
+				.create({
+					from: "whatsapp:+5216865782380",
+					body: "Hola ama",
+					to: "whatsapp:+5216865424276",
+					messagingServiceSid: "MG3e00207234c353ff06bd2711ca7c611a",
+				})
+				.then((message: any) => {
+					console.log("💥💥💥💥💥💥 HOLAA 💥💥💥💥💥💥", message)
+					return this.respondSuccess(res, `Success`, message)
+				})
+		} catch (e) {
+			return this.respondServerError(res)
+		}
 	}
 }
 
