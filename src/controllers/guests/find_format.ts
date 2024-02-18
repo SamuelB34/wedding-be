@@ -6,12 +6,13 @@ export const findFormat = (query_params: any) => {
 		const filter_users = filter.split(",")
 
 		return {
-			$or: [
-				{ first_name: { $regex: query_params.search, $options: "i" } },
-				{ middle_name: { $regex: query_params.search, $options: "i" } },
-				{ last_name: { $regex: query_params.search, $options: "i" } },
-			],
+			full_name: { $regex: query_params.search, $options: "i" },
 			created_by: { $in: filter_users },
+			deleted_at: { $exists: false },
+		}
+	} else if (search) {
+		return {
+			full_name: { $regex: query_params.search, $options: "i" },
 			deleted_at: { $exists: false },
 		}
 	} else if (filter) {

@@ -4,6 +4,7 @@ export interface GuestType {
 	first_name: string
 	middle_name?: string
 	last_name: string
+	full_name?: string
 	email_address: string
 	phone_number: string
 	assist: boolean
@@ -22,6 +23,7 @@ const guestsSchema = new mongoose.Schema<GuestType>({
 	first_name: { type: String, required: true },
 	middle_name: { type: String },
 	last_name: { type: String, required: true },
+	full_name: { type: String },
 	email_address: { type: String, required: true },
 	phone_number: { type: String, required: true },
 	assist: { type: Boolean, required: true },

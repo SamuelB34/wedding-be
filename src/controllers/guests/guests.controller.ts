@@ -9,9 +9,9 @@ import { respondUnauthorized } from "../../common/auth/common"
 import users from "../../models/users"
 import { findFormat } from "./find_format"
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID
-const authToken = process.env.TWILIO_AUTH_TOKEN
-const client = require("twilio")(accountSid, authToken)
+// const accountSid = process.env.TWILIO_ACCOUNT_SID
+// const authToken = process.env.TWILIO_AUTH_TOKEN
+// const client = require("twilio")(accountSid, authToken)
 
 class GuestsController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
@@ -122,6 +122,9 @@ class GuestsController extends BaseController {
 
 			let data = {
 				...body,
+				full_name: body.middle_name
+					? `${body.first_name} ${body.middle_name} ${body.last_name}`
+					: `${body.first_name} ${body.last_name}`,
 				created_at: formatDate(Date.now()),
 				created_by: user?.id,
 			}
@@ -163,6 +166,9 @@ class GuestsController extends BaseController {
 
 			const data = {
 				...body,
+				full_name: body.middle_name
+					? `${body.first_name} ${body.middle_name} ${body.last_name}`
+					: `${body.first_name} ${body.last_name}`,
 				updated_by: user.id,
 				updated_at: formatDate(Date.now()),
 			}
@@ -254,23 +260,51 @@ class GuestsController extends BaseController {
 		} catch (e) {}
 	}
 
-	public sendWhatsApp = async (req: Request, res: Response) => {
-		try {
-			client.messages
-				.create({
-					from: "whatsapp:+5216865782380",
-					body: "Hola ama",
-					to: "whatsapp:+5216865424276",
-					messagingServiceSid: "MG3e00207234c353ff06bd2711ca7c611a",
-				})
-				.then((message: any) => {
-					console.log("💥💥💥💥💥💥 HOLAA 💥💥💥💥💥💥", message)
-					return this.respondSuccess(res, `Success`, message)
-				})
-		} catch (e) {
-			return this.respondServerError(res)
-		}
-	}
+	// public sendWhatsApp = async (req: Request, res: Response) => {
+	// 	try {
+	// 		client.messages
+	// 			.create({
+	// 				from: "whatsapp:+5216865782380",
+	// 				body: "Hola ama",
+	// 				to: "whatsapp:+5216865424276",
+	// 				messagingServiceSid: "MG3e00207234c353ff06bd2711ca7c611a",
+	// 			})
+	// 			.then((message: any) => {
+	// 				console.log("💥💥💥💥💥💥 HOLAA 💥💥💥💥💥💥", message)
+	// 				return this.respondSuccess(res, `Success`, message)
+	// 			})
+	// 	} catch (e) {
+	// 		return this.respondServerError(res)
+	// 	}
+	// }
+
+	// public formatNames = async (
+	// 	req: Request,
+	// 	res: Response,
+	// 	next: NextFunction
+	// ) => {
+	// 	try {
+	// 		const docs: any = await guests.find({ deleted_at: { $exists: false } })
+	//
+	// 		if (docs.length) {
+	// 			for (const doc of docs) {
+	// 				const id = doc._id.toString()
+	// 				const x = await guests.findByIdAndUpdate(id, {
+	// 					$set: {
+	// 						full_name: doc.middle_name
+	// 							? `${doc.first_name} ${doc.middle_name} ${doc.last_name}`
+	// 							: `${doc.first_name} ${doc.last_name}`,
+	// 					},
+	// 				})
+	// 			}
+	// 		}
+	//
+	// 		return this.respondSuccess(res, `Success`, {})
+	// 	} catch (err) {
+	// 		next(err)
+	// 		console.log("HOLA")
+	// 	}
+	// }
 }
 
 export default new GuestsController()
