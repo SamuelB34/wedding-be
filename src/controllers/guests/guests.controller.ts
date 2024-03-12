@@ -8,6 +8,7 @@ import mongoose from "mongoose"
 import { respondUnauthorized } from "../../common/auth/common"
 import users from "../../models/users"
 import { findFormat } from "./find_format"
+import groups from "../../models/groups"
 
 // const accountSid = process.env.TWILIO_ACCOUNT_SID
 // const authToken = process.env.TWILIO_AUTH_TOKEN
@@ -39,14 +40,33 @@ class GuestsController extends BaseController {
 
 					if (!user.length) return this.respondInvalid(res, `User not found`)
 
-					data.push({
-						...doc["_doc"],
-						_id: doc["_doc"]._id,
-						created_by: {
-							_id: doc.created_by,
-							username: user[0].username,
-						},
-					})
+					if (doc["_doc"].group.length) {
+						const group = await groups.find({
+							_id: doc.group,
+							deleted_at: { $exists: false },
+						})
+
+						if (!group.length) return this.respondInvalid(res, `User not found`)
+
+						data.push({
+							...doc["_doc"],
+							_id: doc["_doc"]._id,
+							group: group[0].name,
+							created_by: {
+								_id: doc.created_by,
+								username: user[0].username,
+							},
+						})
+					} else {
+						data.push({
+							...doc["_doc"],
+							_id: doc["_doc"]._id,
+							created_by: {
+								_id: doc.created_by,
+								username: user[0].username,
+							},
+						})
+					}
 				}
 			} else {
 				data = docs

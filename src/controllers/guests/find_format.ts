@@ -28,3 +28,18 @@ export const findFormat = (query_params: any) => {
 		}
 	}
 }
+
+export const findFormatGroups = (query_params: any) => {
+	let search = query_params.search
+
+	if (search) {
+		return {
+			name: { $regex: query_params.search, $options: "i" },
+			deleted_at: { $exists: false },
+		}
+	} else {
+		return {
+			deleted_at: { $exists: false },
+		}
+	}
+}

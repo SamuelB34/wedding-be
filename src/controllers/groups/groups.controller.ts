@@ -7,11 +7,19 @@ import { formatDate } from "../../middlewares/format"
 import guests from "../../models/guests"
 import { UpdateGroupDto } from "./dtos/update-group.dto"
 import { respondUnauthorized } from "../../common/auth/common"
+import { findFormat, findFormatGroups } from "../guests/find_format"
 
 class GroupsController extends BaseController {
 	public getAll = async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			const docs: any = await groups.find({ deleted_at: { $exists: false } })
+			const query_params: any = req.query
+			const skipRecords = (+query_params.p - 1) * +query_params.pp
+
+			const docs: any = await groups
+				.find(findFormatGroups(query_params))
+				.skip(+skipRecords)
+				.limit(+query_params.pp || 30)
+				.sort({ created_at: -1 })
 
 			let groups_list = []
 			for (const doc of docs) {
@@ -19,13 +27,32 @@ class GroupsController extends BaseController {
 					_id: { $in: doc.guests },
 					deleted_at: { $exists: false },
 				})
+
+				const guests_names = guests_list.map((guest) => {
+					return guest.full_name
+				})
+
 				groups_list.push({
 					...doc["_doc"],
-					guests: guests_list,
+					guests: guests_names,
 				})
 			}
 
 			return this.respondSuccess(res, `Success`, groups_list)
+		} catch (err) {
+			next(err)
+		}
+	}
+
+	public totalCount = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const query_params: any = req.query
+			const docs = await groups.countDocuments(findFormatGroups(query_params))
+			return this.respondSuccess(res, `Success`, { total_count: docs })
 		} catch (err) {
 			next(err)
 		}
@@ -137,6 +164,7 @@ class GroupsController extends BaseController {
 
 			return this.respondSuccess(res, `Success`, new_group)
 		} catch (err) {
+			console.log("HOLAAAA")
 			next(err)
 		}
 	}
