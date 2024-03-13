@@ -84,9 +84,17 @@ class GroupsController extends BaseController {
 				})
 			}
 
+			const list = []
+			for (const guestsListElement of guests_list) {
+				list.push({
+					label: guestsListElement.full_name,
+					value: guestsListElement._id,
+				})
+			}
+
 			const group_res = {
 				...group[0]["_doc"],
-				guests: guests_list,
+				guests: list,
 			}
 
 			return this.respondSuccess(res, `Success`, group_res)
