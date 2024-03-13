@@ -3,7 +3,7 @@ import { BaseController } from "../base.controller"
 import { Request, Response, NextFunction } from "express"
 import { CreateGuestDto } from "./dtos/create-guest.dto"
 import { formatDate } from "../../middlewares/format"
-import { UpdateGuestDto } from "./dtos/update-guest.dto"
+import { UpdateAnswerGuestDto, UpdateGuestDto } from "./dtos/update-guest.dto"
 import mongoose from "mongoose"
 import { respondUnauthorized } from "../../common/auth/common"
 import users from "../../models/users"
@@ -101,14 +101,63 @@ class GuestsController extends BaseController {
 				return this.respondInvalid(res, `Invalid ID`)
 			}
 
-			const guest = await guests.find({
+			const guest: any = await guests.find({
 				_id: id,
 				deleted_at: { $exists: false },
 			})
 
 			if (!guest.length) return this.respondInvalid(res, `Guest not found`)
 
-			return this.respondSuccess(res, `Success`, guest)
+			let data
+
+			if (guest[0]["_doc"].group.length) {
+				const group = await groups.find({
+					_id: guest[0].group,
+					deleted_at: { $exists: false },
+				})
+
+				if (!group.length) return this.respondInvalid(res, `User not found`)
+
+				data = {
+					...guest[0]["_doc"],
+					group: { label: group[0].name, value: group[0]._id },
+				}
+			} else {
+				data = guest[0]["_doc"]
+			}
+
+			return this.respondSuccess(res, `Success`, data)
+		} catch (err) {
+			next(err)
+		}
+	}
+
+	public getSingleById = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const id = req.params.id
+
+			// Check if the ID is valid
+			if (!mongoose.Types.ObjectId.isValid(id)) {
+				return this.respondInvalid(res, `Invalid ID`)
+			}
+
+			const guest: any = await guests.find({
+				_id: id,
+				deleted_at: { $exists: false },
+			})
+
+			if (!guest.length) return this.respondInvalid(res, `Guest not found`)
+
+			return this.respondSuccess(res, `Success`, {
+				first_name: guest[0]["_doc"].first_name,
+				saw_invitation: guest[0]["_doc"].saw_invitation,
+				answered: guest[0]["_doc"].answer,
+				assist: guest[0]["_doc"].assist,
+			})
 		} catch (err) {
 			next(err)
 		}
@@ -148,8 +197,34 @@ class GuestsController extends BaseController {
 				created_at: formatDate(Date.now()),
 				created_by: user?.id,
 			}
-			const newGuest = await guests.create(data)
+			const newGuest: any = await guests.create(data)
 			if (!newGuest) return this.respondServerError(res)
+
+			if (body.group) {
+				if (!mongoose.Types.ObjectId.isValid(body.group)) {
+					return this.respondInvalid(res, `Invalid Group ID`)
+				}
+				const group = await groups.find({
+					_id: body.group,
+					deleted_at: { $exists: false },
+				})
+
+				if (!group.length) return this.respondInvalid(res, `Group not found`)
+
+				const guests_of_group = group[0].guests.map((guest_id) => {
+					return guest_id.toString()
+				})
+				guests_of_group.push(newGuest["_id"].toString())
+
+				const updateGroup = await groups.findByIdAndUpdate(body.group, {
+					guests: guests_of_group,
+				})
+				if (!updateGroup)
+					return this.respondInvalid(
+						res,
+						`User created, but issue assigning the group`
+					)
+			}
 
 			return this.respondSuccess(res, `Success`, newGuest)
 		} catch (err) {
@@ -193,11 +268,118 @@ class GuestsController extends BaseController {
 				updated_at: formatDate(Date.now()),
 			}
 
+			if (data.group) {
+				if (
+					find_id[0].group?.length &&
+					find_id[0].group[0].toString() !== data.group
+				) {
+					const group = await groups.findById(data.group)
+
+					if (!group) return this.respondInvalid(res, `Group not found`)
+
+					const prev_group = await groups.findById(find_id[0].group[0])
+
+					if (!prev_group)
+						return this.respondInvalid(res, `Previous group not found`)
+
+					const prev_guests_list = prev_group["guests"].map((guest_id) => {
+						return guest_id.toString()
+					})
+
+					const guests_list = group["guests"].map((guest_id) => {
+						return guest_id.toString()
+					})
+
+					guests_list.push(id)
+
+					const index = prev_guests_list.findIndex((value) => {
+						return value === id
+					})
+
+					console.log(index)
+
+					prev_guests_list.splice(index, 1)
+
+					const updated_group = await groups.findByIdAndUpdate(data.group, {
+						guests: guests_list,
+					})
+
+					const updated_prev_group = await groups.findByIdAndUpdate(
+						find_id[0].group[0].toString(),
+						{
+							guests: prev_guests_list,
+						}
+					)
+
+					if (!updated_prev_group)
+						return this.respondInvalid(res, `Error updating previous group`)
+
+					if (!updated_group)
+						return this.respondInvalid(res, `Error updating group`)
+				} else if (!find_id[0].group?.length) {
+					const group = await groups.findById(data.group)
+
+					if (!group) return this.respondInvalid(res, `Group not found`)
+
+					const guests_list = group["guests"].map((guest_id) => {
+						return guest_id.toString()
+					})
+					guests_list.push(id)
+
+					const updated_group = await groups.findByIdAndUpdate(data.group, {
+						guests: guests_list,
+					})
+
+					if (!updated_group)
+						return this.respondInvalid(res, `Error updating group`)
+				}
+			}
+
 			const guest = await guests.findByIdAndUpdate(id, data)
 
 			if (!guest) return this.respondInvalid(res, `Guest not found`)
 
 			return this.respondSuccess(res, `Success`, body)
+		} catch (e) {
+			return this.respondServerError(res)
+		}
+	}
+
+	public updateAssist = async (req: Request, res: Response) => {
+		try {
+			const id = req.params.id
+			const body = req.body as UpdateAnswerGuestDto
+
+			if (!mongoose.Types.ObjectId.isValid(id)) {
+				return this.respondInvalid(res, `Invalid ID`)
+			}
+
+			const guest = await guests.findByIdAndUpdate(id, {
+				answer: true,
+				assist: body.assist,
+			})
+
+			if (!guest) return this.respondInvalid(res, `Guest not found`)
+
+			return this.respondSuccess(res, `Success`, guest)
+		} catch (e) {
+			return this.respondServerError(res)
+		}
+	}
+
+	public updateSawInvitation = async (req: Request, res: Response) => {
+		try {
+			const id = req.params.id
+
+			if (!mongoose.Types.ObjectId.isValid(id)) {
+				return this.respondInvalid(res, `Invalid ID`)
+			}
+
+			const guest = await guests.findByIdAndUpdate(id, { saw_invitation: true })
+
+			if (!guest) return this.respondInvalid(res, `Guest not found`)
+
+			return this.respondSuccess(res, `Success`, guest)
 		} catch (e) {
 			return this.respondServerError(res)
 		}
@@ -228,9 +410,41 @@ class GuestsController extends BaseController {
 				)
 
 			const guest = await guests.findByIdAndUpdate(id, {
+				group: "",
 				deleted_at: formatDate(Date.now()),
 				deleted_by: user.id,
 			})
+
+			if (find_id[0].group) {
+				if (!mongoose.Types.ObjectId.isValid(find_id[0].group.toString())) {
+					return this.respondInvalid(res, `Invalid Group ID`)
+				}
+				const group = await groups.find({
+					_id: find_id[0].group,
+					deleted_at: { $exists: false },
+				})
+
+				if (!group.length) return this.respondInvalid(res, `Group not found`)
+
+				const guests_of_group = group[0].guests.map((guest_id) => {
+					return guest_id.toString()
+				})
+
+				const index = guests_of_group.findIndex((value) => {
+					return value === find_id[0].group
+				})
+
+				guests_of_group.splice(index, 1)
+
+				const updateGroup = await groups.findByIdAndUpdate(find_id[0].group, {
+					guests: guests_of_group,
+				})
+				if (!updateGroup)
+					return this.respondInvalid(
+						res,
+						`User deleted, but issue modifying the group`
+					)
+			}
 
 			if (!guest) return this.respondInvalid(res, `Guest not found`)
 

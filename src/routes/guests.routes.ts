@@ -10,8 +10,9 @@ const router = express.Router()
 
 router.get("/", authLoggedUser, GuestsController.getAll)
 router.get("/total-count", authLoggedUser, GuestsController.totalCount)
-router.get("/saw-invitation", authLoggedUser, GuestsController.sawInvitation)
-router.get("/assist", authLoggedUser, GuestsController.assist)
+router.get("/saw-invitation", GuestsController.sawInvitation)
+router.get("/assist", GuestsController.assist)
+router.get("/single/:id", GuestsController.getSingleById)
 router.get("/:id", authLoggedUser, GuestsController.getById)
 
 router.post(
@@ -26,6 +27,18 @@ router.put(
 	authLoggedUser,
 	// dtoValidation(UpdateGuestDto),
 	GuestsController.update
+)
+
+router.put(
+	"/saw_invitation/:id",
+	// dtoValidation(UpdateGuestDto),
+	GuestsController.updateSawInvitation
+)
+
+router.put(
+	"/assist/:id",
+	// dtoValidation(UpdateGuestDto),
+	GuestsController.updateAssist
 )
 
 router.delete("/:id", authLoggedUser, GuestsController.delete)

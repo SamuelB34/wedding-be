@@ -8,6 +8,7 @@ export interface GuestType {
 	email_address: string
 	phone_number: string
 	assist: boolean
+	answer: boolean
 	saw_invitation: boolean
 	group?: string
 	table?: string
@@ -27,6 +28,7 @@ const guestsSchema = new mongoose.Schema<GuestType>({
 	email_address: { type: String, required: true },
 	phone_number: { type: String, required: true },
 	assist: { type: Boolean, required: true },
+	answer: { type: Boolean, required: true, default: false },
 	saw_invitation: { type: Boolean, required: true },
 	group: [{ type: mongoose.Schema.Types.ObjectId, ref: "Groups" }],
 	table: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tables" }],

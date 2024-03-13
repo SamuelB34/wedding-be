@@ -17,3 +17,6 @@ export class UpdateGuestDto {
 
 	table?: string
 }
+export class UpdateAnswerGuestDto {
+	assist!: boolean
+}
