@@ -396,7 +396,7 @@ class GuestsController extends BaseController {
 				return this.respondInvalid(res, `Invalid ID`)
 			}
 
-			const find_id = await guests.find({
+			const find_id: any = await guests.find({
 				_id: id,
 				deleted_at: { $exists: false },
 			})
@@ -410,13 +410,15 @@ class GuestsController extends BaseController {
 				)
 
 			const guest = await guests.findByIdAndUpdate(id, {
-				group: "",
+				group: [],
 				deleted_at: formatDate(Date.now()),
 				deleted_by: user.id,
 			})
 
-			if (find_id[0].group) {
-				if (!mongoose.Types.ObjectId.isValid(find_id[0].group.toString())) {
+			if (!guest) return this.respondInvalid(res, `Guest error updating guest`)
+
+			if (find_id[0].group.length) {
+				if (!mongoose.Types.ObjectId.isValid(find_id[0].group[0].toString())) {
 					return this.respondInvalid(res, `Invalid Group ID`)
 				}
 				const group = await groups.find({
@@ -453,7 +455,9 @@ class GuestsController extends BaseController {
 				`Success`,
 				` Record deleted: ${id} 💥💥💥`
 			)
-		} catch (e) {}
+		} catch (e) {
+			console.log(e)
+		}
 	}
 
 	public sawInvitation = async (req: Request, res: Response) => {
