@@ -497,52 +497,6 @@ class GuestsController extends BaseController {
 			return this.respondSuccess(res, `Success`, data)
 		} catch (e) {}
 	}
-
-	// public sendWhatsApp = async (req: Request, res: Response) => {
-	// 	try {
-	// 		client.messages
-	// 			.create({
-	// 				from: "whatsapp:+5216865782380",
-	// 				body: "Hola ama",
-	// 				to: "whatsapp:+5216865424276",
-	// 				messagingServiceSid: "MG3e00207234c353ff06bd2711ca7c611a",
-	// 			})
-	// 			.then((message: any) => {
-	// 				console.log("💥💥💥💥💥💥 HOLAA 💥💥💥💥💥💥", message)
-	// 				return this.respondSuccess(res, `Success`, message)
-	// 			})
-	// 	} catch (e) {
-	// 		return this.respondServerError(res)
-	// 	}
-	// }
-
-	// public formatNames = async (
-	// 	req: Request,
-	// 	res: Response,
-	// 	next: NextFunction
-	// ) => {
-	// 	try {
-	// 		const docs: any = await guests.find({ deleted_at: { $exists: false } })
-	//
-	// 		if (docs.length) {
-	// 			for (const doc of docs) {
-	// 				const id = doc._id.toString()
-	// 				const x = await guests.findByIdAndUpdate(id, {
-	// 					$set: {
-	// 						full_name: doc.middle_name
-	// 							? `${doc.first_name} ${doc.middle_name} ${doc.last_name}`
-	// 							: `${doc.first_name} ${doc.last_name}`,
-	// 					},
-	// 				})
-	// 			}
-	// 		}
-	//
-	// 		return this.respondSuccess(res, `Success`, {})
-	// 	} catch (err) {
-	// 		next(err)
-	// 		console.log("HOLA")
-	// 	}
-	// }
 }
 
 export default new GuestsController()
