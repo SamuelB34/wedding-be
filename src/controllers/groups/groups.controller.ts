@@ -14,29 +14,54 @@ class GroupsController extends BaseController {
 		try {
 			const query_params: any = req.query
 			const skipRecords = (+query_params.p - 1) * +query_params.pp
+			const sortBy = query_params.sort_by || "created_at" // Campo por defecto si no se envía sort_by
+			const sortOrder = query_params.sort_order === "asc" ? 1 : -1 // Orden ascendente si sort_order es 'asc', descendente por defecto
 
-			const docs: any = await groups
-				.find(findFormatGroups(query_params))
-				.skip(+skipRecords)
-				.limit(+query_params.pp || 30)
-				.sort({ created_at: -1 })
+			// Construye el pipeline de agregación
+			const pipeline: any = [
+				// Filtro inicial según los parámetros
+				{ $match: findFormatGroups(query_params) },
 
-			let groups_list = []
-			for (const doc of docs) {
-				const guests_list = await guests.find({
-					_id: { $in: doc.guests },
-					deleted_at: { $exists: false },
-				})
+				// Etapa para contar invitados
+				{
+					$lookup: {
+						from: "guests",
+						localField: "guests",
+						foreignField: "_id",
+						as: "guests_list",
+					},
+				},
+				{
+					$addFields: {
+						count: { $size: "$guests_list" }, // Añade un campo 'count' que contiene el número de invitados
+					},
+				},
 
-				const guests_names = guests_list.map((guest) => {
-					return guest.full_name
-				})
+				// Etapa de ordenación dinámica
+				{
+					$sort: {
+						[sortBy]: sortOrder, // Ordena según el campo `sortBy` (por ejemplo, 'count') y el orden `sortOrder`
+					},
+				},
 
-				groups_list.push({
-					...doc["_doc"],
+				// Omite y limita los resultados
+				{ $skip: skipRecords },
+				{ $limit: +query_params.pp || 30 },
+			]
+
+			const docs: any = await groups.aggregate(pipeline)
+
+			// Formatea los resultados para incluir solo los nombres de los invitados y el conteo
+			const groups_list = docs.map((doc: any) => {
+				const guests_names = doc.guests_list.map(
+					(guest: any) => guest.full_name
+				)
+				return {
+					...doc,
 					guests: guests_names,
-				})
-			}
+					count: guests_names.length,
+				}
+			})
 
 			return this.respondSuccess(res, `Success`, groups_list)
 		} catch (err) {

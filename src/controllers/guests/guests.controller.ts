@@ -7,8 +7,9 @@ import { UpdateAnswerGuestDto, UpdateGuestDto } from "./dtos/update-guest.dto"
 import mongoose from "mongoose"
 import { respondUnauthorized } from "../../common/auth/common"
 import users from "../../models/users"
-import { findFormat } from "./find_format"
+import { findFormat, findFormatGroups } from "./find_format"
 import groups from "../../models/groups"
+import tables from "../../models/tables"
 
 // const accountSid = process.env.TWILIO_ACCOUNT_SID
 // const authToken = process.env.TWILIO_AUTH_TOKEN
@@ -22,12 +23,14 @@ class GuestsController extends BaseController {
 			const skipRecords = (+query_params.p - 1) * +query_params.pp
 			const filter = query_params.filter
 			let filter_users = []
+			const sortBy = query_params.sort_by || "created_at" // Campo por defecto si no se envía sort_by
+			const sortOrder = query_params.sort_order === "asc" ? 1 : -1 // Orden ascendente si sort_order es 'asc', descendente por defecto
 
 			const docs: any = await guests
 				.find(findFormat(query_params))
 				.skip(+skipRecords)
 				.limit(+query_params.pp || 30)
-				.sort({ created_at: -1 })
+				.sort({ [sortBy]: sortOrder }) // Usar el nombre del campo y el orden dinámicamente
 
 			let data: any[] = []
 
@@ -48,15 +51,36 @@ class GuestsController extends BaseController {
 
 						if (!group.length) return this.respondInvalid(res, `User not found`)
 
-						data.push({
-							...doc["_doc"],
-							_id: doc["_doc"]._id,
-							group: group[0].name,
-							created_by: {
-								_id: doc.created_by,
-								username: user[0].username,
-							},
-						})
+						if (doc["_doc"].table.length) {
+							const table = await tables.find({
+								_id: doc.table,
+								deleted_at: { $exists: false },
+							})
+
+							if (!table.length)
+								return this.respondInvalid(res, `Table not found`)
+
+							data.push({
+								...doc["_doc"],
+								_id: doc["_doc"]._id,
+								group: group[0].name,
+								table: table[0].number,
+								created_by: {
+									_id: doc.created_by,
+									username: user[0].username,
+								},
+							})
+						} else {
+							data.push({
+								...doc["_doc"],
+								_id: doc["_doc"]._id,
+								group: group[0].name,
+								created_by: {
+									_id: doc.created_by,
+									username: user[0].username,
+								},
+							})
+						}
 					} else {
 						data.push({
 							...doc["_doc"],
