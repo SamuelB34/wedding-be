@@ -49,8 +49,6 @@ class GuestsController extends BaseController {
 							deleted_at: { $exists: false },
 						})
 
-						if (!group.length) return this.respondInvalid(res, `User not found`)
-
 						if (doc["_doc"].table.length) {
 							const table = await tables.find({
 								_id: doc.table,
@@ -63,8 +61,8 @@ class GuestsController extends BaseController {
 							data.push({
 								...doc["_doc"],
 								_id: doc["_doc"]._id,
-								group: group[0].name,
-								table: table[0].number,
+								group: group[0]?.name || "",
+								table: table[0]?.number || "",
 								created_by: {
 									_id: doc.created_by,
 									username: user[0].username,
@@ -74,7 +72,7 @@ class GuestsController extends BaseController {
 							data.push({
 								...doc["_doc"],
 								_id: doc["_doc"]._id,
-								group: group[0].name,
+								group: group[0]?.name || "",
 								created_by: {
 									_id: doc.created_by,
 									username: user[0].username,
