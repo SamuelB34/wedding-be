@@ -12,6 +12,7 @@ router.get("/", authLoggedUser, GuestsController.getAll)
 router.get("/total-count", authLoggedUser, GuestsController.totalCount)
 router.get("/saw-invitation", GuestsController.sawInvitation)
 router.get("/assist", GuestsController.assist)
+router.get("/export", authLoggedUser, GuestsController.exportToCsv)
 router.get("/single/:id", GuestsController.getSingleById)
 router.get("/:id", authLoggedUser, GuestsController.getById)
 

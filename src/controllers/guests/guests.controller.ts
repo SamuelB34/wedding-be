@@ -10,6 +10,7 @@ import users from "../../models/users"
 import { findFormat, findFormatGroups } from "./find_format"
 import groups from "../../models/groups"
 import tables from "../../models/tables"
+import Papa from "papaparse"
 
 // const accountSid = process.env.TWILIO_ACCOUNT_SID
 // const authToken = process.env.TWILIO_AUTH_TOKEN
@@ -23,14 +24,23 @@ class GuestsController extends BaseController {
 			const skipRecords = (+query_params.p - 1) * +query_params.pp
 			const filter = query_params.filter
 			let filter_users = []
-			const sortBy = query_params.sort_by || "created_at" // Campo por defecto si no se envía sort_by
+			const sortBy = query_params.sort_by
 			const sortOrder = query_params.sort_order === "asc" ? 1 : -1 // Orden ascendente si sort_order es 'asc', descendente por defecto
 
-			const docs: any = await guests
-				.find(findFormat(query_params))
-				.skip(+skipRecords)
-				.limit(+query_params.pp || 30)
-				.sort({ [sortBy]: sortOrder }) // Usar el nombre del campo y el orden dinámicamente
+			let docs: any
+
+			if (sortBy) {
+				docs = await guests
+					.find(findFormat(query_params))
+					.skip(+skipRecords)
+					.limit(+query_params.pp || 30)
+					.sort({ [sortBy]: sortOrder }) // Usar el nombre del campo y el orden dinámicamente
+			} else {
+				docs = await guests
+					.find(findFormat(query_params))
+					.skip(+skipRecords)
+					.limit(+query_params.pp || 30)
+			}
 
 			let data: any[] = []
 
@@ -518,6 +528,39 @@ class GuestsController extends BaseController {
 			}
 			return this.respondSuccess(res, `Success`, data)
 		} catch (e) {}
+	}
+
+	public exportToCsv = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const query_params: any = req.query
+			const docs = await guests.find(findFormat(query_params))
+
+			if (!docs.length) {
+				return this.respondInvalid(res, "No data found")
+			}
+
+			// Formatea los datos según sea necesario
+			const formattedData = docs.map((doc) => ({
+				id: doc._id,
+				name: doc.full_name,
+				email: doc.email_address,
+				phone: doc.phone_number,
+			}))
+
+			// Convierte los datos a CSV usando PapaParse
+			const csv = Papa.unparse(formattedData)
+
+			// Envía el archivo CSV como respuesta
+			res.setHeader("Content-Type", "text/csv")
+			res.setHeader("Content-Disposition", "attachment; filename=guests.csv")
+			res.status(200).send(csv)
+		} catch (err) {
+			next(err)
+		}
 	}
 }
 

@@ -17,7 +17,6 @@ export const findFormat = (query_params: any) => {
 		}
 	} else if (filter) {
 		const filter_users = filter.split(",")
-
 		return {
 			created_by: { $in: filter_users },
 			deleted_at: { $exists: false },
