@@ -65,61 +65,69 @@ class TablesController extends BaseController {
 			if (number_repeated.length)
 				return this.respondInvalid(res, `Table Already Created`)
 
-			// If guests array contains ids
+			// Validate guests
 			if (body_guests.length) {
-				// Check if ID's introduced are correct
-				for (const id of body_guests) {
-					if (!mongoose.Types.ObjectId.isValid(id)) {
+				for (const guest_id of body_guests) {
+					if (!mongoose.Types.ObjectId.isValid(guest_id)) {
 						return this.respondInvalid(res, `Invalid Guest ID`)
 					}
 				}
 
-				// Check that guests id's exists
 				const guests_list = await guests.find({
 					_id: { $in: body_guests },
 					deleted_at: { $exists: false },
 				})
 
 				const found_ids = guests_list.map((user) => user._id.toString())
-				const missing_ids = guests_list.filter(
+				const missing_ids = body_guests.filter(
 					(id: any) => !found_ids.includes(id)
 				)
 
-				if (missing_ids.length === 0) {
+				if (missing_ids.length) {
 					return this.respondInvalid(
 						res,
-						`Some Guests ID's introduced doesn't exist`
+						`Some Guests ID's introduced don't exist`
 					)
 				}
 			}
 
-			// If groups array contains ids
+			// Validate groups
+			let group_guests: string[] = []
 			if (body_groups.length) {
-				// Check if ID's introduced are correct
-				for (const id of body_groups) {
-					if (!mongoose.Types.ObjectId.isValid(id)) {
+				for (const group_id of body_groups) {
+					if (!mongoose.Types.ObjectId.isValid(group_id)) {
 						return this.respondInvalid(res, `Invalid Group ID`)
 					}
 				}
 
-				// Check that groups id's exists
 				const groups_list = await groups.find({
 					_id: { $in: body_groups },
 					deleted_at: { $exists: false },
 				})
 
-				const found_ids = groups_list.map((user) => user._id.toString())
-				const missing_ids = groups_list.filter(
+				const found_ids = groups_list.map((group) => group._id.toString())
+				const missing_ids = body_groups.filter(
 					(id: any) => !found_ids.includes(id)
 				)
 
-				if (missing_ids.length === 0) {
+				if (missing_ids.length) {
 					return this.respondInvalid(
 						res,
-						`Some Groups ID's introduced doesn't exist`
+						`Some Groups ID's introduced don't exist`
 					)
 				}
+
+				// Get all guests from groups
+				const group_members = groups_list
+					.map((group) => {
+						return group.guests
+					})
+					.flat()
+
+				group_guests = group_members.map((member) => member.toString())
 			}
+
+			const all_guests = group_guests.concat(body_guests)
 
 			let data = {
 				...body,
@@ -130,22 +138,11 @@ class TablesController extends BaseController {
 			const new_table = await tables.create(data)
 			if (!new_table) return this.respondServerError(res)
 
-			// Add to the guests the table we created if it has guests list
-			if (body_guests.length) {
+			// Update guests with table ID
+			if (all_guests.length) {
 				await guests.updateMany(
 					{
-						_id: { $in: body_guests },
-						deleted_at: { $exists: false },
-					},
-					{ $set: { table: new_table["_id"].toString() } }
-				)
-			}
-
-			// Add to the groups the table we created if it has guests list
-			if (body_groups.length) {
-				await groups.updateMany(
-					{
-						_id: { $in: body_groups },
+						_id: { $in: all_guests },
 						deleted_at: { $exists: false },
 					},
 					{ $set: { table: new_table["_id"].toString() } }
@@ -181,61 +178,69 @@ class TablesController extends BaseController {
 					`Only admins and the one created the table can update it`
 				)
 
-			// If guests array contains ids
+			// Validate guests
 			if (body_guests.length) {
-				// Check if ID's introduced are correct
 				for (const guest_id of body_guests) {
 					if (!mongoose.Types.ObjectId.isValid(guest_id)) {
 						return this.respondInvalid(res, `Invalid Guest ID`)
 					}
 				}
 
-				// Check that guests id's exists
 				const guests_list = await guests.find({
 					_id: { $in: body_guests },
 					deleted_at: { $exists: false },
 				})
 
 				const found_ids = guests_list.map((user) => user._id.toString())
-				const missing_ids = guests_list.filter(
+				const missing_ids = body_guests.filter(
 					(id: any) => !found_ids.includes(id)
 				)
 
-				if (missing_ids.length === 0) {
+				if (missing_ids.length) {
 					return this.respondInvalid(
 						res,
-						`Some Guests ID's introduced doesn't exist`
+						`Some Guests ID's introduced don't exist`
 					)
 				}
 			}
 
-			// If groups array contains ids
+			// Validate groups
+			let group_guests: string[] = []
 			if (body_groups.length) {
-				// Check if ID's introduced are correct
 				for (const group_id of body_groups) {
 					if (!mongoose.Types.ObjectId.isValid(group_id)) {
 						return this.respondInvalid(res, `Invalid Group ID`)
 					}
 				}
 
-				// Check that groups id's exists
 				const groups_list = await groups.find({
 					_id: { $in: body_groups },
 					deleted_at: { $exists: false },
 				})
 
-				const found_ids = groups_list.map((user) => user._id.toString())
-				const missing_ids = groups_list.filter(
+				const found_ids = groups_list.map((group) => group._id.toString())
+				const missing_ids = body_groups.filter(
 					(id: any) => !found_ids.includes(id)
 				)
 
-				if (missing_ids.length === 0) {
+				if (missing_ids.length) {
 					return this.respondInvalid(
 						res,
-						`Some Groups ID's introduced doesn't exist`
+						`Some Groups ID's introduced don't exist`
 					)
 				}
+
+				// Get all guests from groups
+				const group_members = groups_list
+					.map((group) => {
+						return group.guests
+					})
+					.flat()
+
+				group_guests = group_members.map((member) => member.toString())
 			}
+
+			const all_guests = group_guests.concat(body_guests)
 
 			let data = {
 				...body,
@@ -246,22 +251,12 @@ class TablesController extends BaseController {
 			const update_table = await tables.findByIdAndUpdate(id, data)
 			if (!update_table) return this.respondInvalid(res, "No Table Found")
 
-			// Add to the guests the table we created if it has guests list
-			if (body_guests.length) {
+			// Update guests with table ID
+			if (all_guests.length) {
+				console.log("ENTRE AQUI AMIX")
 				await guests.updateMany(
 					{
-						_id: { $in: body_guests },
-						deleted_at: { $exists: false },
-					},
-					{ $set: { table: update_table["_id"].toString() } }
-				)
-			}
-
-			// Add to the groups the table we created if it has guests list
-			if (body_groups.length) {
-				await groups.updateMany(
-					{
-						_id: { $in: body_groups },
+						_id: { $in: all_guests },
 						deleted_at: { $exists: false },
 					},
 					{ $set: { table: update_table["_id"].toString() } }

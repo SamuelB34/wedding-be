@@ -67,7 +67,6 @@ class GuestsController extends BaseController {
 
 							if (!table.length)
 								return this.respondInvalid(res, `Table not found`)
-
 							data.push({
 								...doc["_doc"],
 								_id: doc["_doc"]._id,
@@ -90,14 +89,33 @@ class GuestsController extends BaseController {
 							})
 						}
 					} else {
-						data.push({
-							...doc["_doc"],
-							_id: doc["_doc"]._id,
-							created_by: {
-								_id: doc.created_by,
-								username: user[0].username,
-							},
-						})
+						if (doc["_doc"].table.length) {
+							const table = await tables.find({
+								_id: doc.table,
+								deleted_at: { $exists: false },
+							})
+
+							if (!table.length)
+								return this.respondInvalid(res, `Table not found`)
+							data.push({
+								...doc["_doc"],
+								_id: doc["_doc"]._id,
+								table: table[0]?.number || "",
+								created_by: {
+									_id: doc.created_by,
+									username: user[0].username,
+								},
+							})
+						} else {
+							data.push({
+								...doc["_doc"],
+								_id: doc["_doc"]._id,
+								created_by: {
+									_id: doc.created_by,
+									username: user[0].username,
+								},
+							})
+						}
 					}
 				}
 			} else {
@@ -188,7 +206,21 @@ class GuestsController extends BaseController {
 					}
 				}
 			} else {
-				data = guest[0]["_doc"]
+				if (guest[0]["_doc"].table.length) {
+					const table = await tables.find({
+						_id: guest[0].table,
+						deleted_at: { $exists: false },
+					})
+
+					if (!table.length) return this.respondInvalid(res, `Table not found`)
+
+					data = {
+						...guest[0]["_doc"],
+						table: { label: table[0].number, value: table[0]._id },
+					}
+				} else {
+					data = guest[0]["_doc"]
+				}
 			}
 
 			return this.respondSuccess(res, `Success`, data)

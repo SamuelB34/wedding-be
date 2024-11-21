@@ -10,19 +10,9 @@ const router = express.Router()
 router.get("/", authLoggedUser, TablesController.getAll)
 router.get("/:id", authLoggedUser, TablesController.getById)
 
-router.post(
-	"/",
-	authLoggedUser,
-	dtoValidation(CreateTableDto),
-	TablesController.create
-)
+router.post("/", authLoggedUser, TablesController.create)
 
-router.put(
-	"/:id",
-	authLoggedUser,
-	dtoValidation(UpdateTableDto),
-	TablesController.update
-)
+router.put("/:id", authLoggedUser, TablesController.update)
 
 router.delete("/:id", authLoggedUser, TablesController.delete)
 
