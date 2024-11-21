@@ -14,7 +14,7 @@ router.get("/saw-invitation", GuestsController.sawInvitation)
 router.get("/assist", GuestsController.assist)
 router.get("/export", authLoggedUser, GuestsController.exportToCsv)
 router.get("/single/:id", GuestsController.getSingleById)
-router.get("/:id", authLoggedUser, GuestsController.getById)
+router.get("/:id", GuestsController.getById)
 
 router.post(
 	"/",

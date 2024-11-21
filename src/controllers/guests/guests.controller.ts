@@ -148,11 +148,44 @@ class GuestsController extends BaseController {
 					deleted_at: { $exists: false },
 				})
 
-				if (!group.length) return this.respondInvalid(res, `User not found`)
+				if (!group.length) return this.respondInvalid(res, `Group not found`)
 
-				data = {
-					...guest[0]["_doc"],
-					group: { label: group[0].name, value: group[0]._id },
+				let guests_list: any[] = []
+
+				// Check if group has guests
+				if (group[0].guests.length) {
+					guests_list = await guests.find({
+						_id: { $in: group[0].guests },
+						deleted_at: { $exists: false },
+					})
+				}
+
+				const list = []
+				for (const guestsListElement of guests_list) {
+					list.push({
+						label: guestsListElement.full_name,
+						value: guestsListElement._id,
+					})
+				}
+
+				if (guest[0]["_doc"].table.length) {
+					const table = await tables.find({
+						_id: guest[0].table,
+						deleted_at: { $exists: false },
+					})
+
+					if (!table.length) return this.respondInvalid(res, `Table not found`)
+
+					data = {
+						...guest[0]["_doc"],
+						table: { label: table[0].number, value: table[0]._id },
+						group: { label: group[0].name, value: group[0]._id, guests: list },
+					}
+				} else {
+					data = {
+						...guest[0]["_doc"],
+						group: { label: group[0].name, value: group[0]._id, guests: list },
+					}
 				}
 			} else {
 				data = guest[0]["_doc"]
