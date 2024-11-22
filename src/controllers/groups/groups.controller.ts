@@ -209,7 +209,7 @@ class GroupsController extends BaseController {
 			const body = req.body as UpdateGroupDto
 			const id = req.params.id
 
-			// const name: string = body.name
+			// const name: string = body.name;
 			const body_guests: string[] = body.guests
 
 			// Check if the ID is valid
@@ -217,7 +217,7 @@ class GroupsController extends BaseController {
 				return this.respondInvalid(res, `Invalid ID`)
 			}
 
-			const find_id: any = await groups.find({
+			const find_id: any = await groups.findOne({
 				_id: id,
 				deleted_at: { $exists: false },
 			})
@@ -231,10 +231,10 @@ class GroupsController extends BaseController {
 				)
 
 			// Remove current guests group
-			if (find_id[0]["guests"].length) {
+			if (find_id["guests"]?.length) {
 				await guests.updateMany(
 					{
-						_id: { $in: find_id[0]["guests"] },
+						_id: { $in: find_id["guests"] },
 						deleted_at: { $exists: false },
 					},
 					{ $set: { group: [] } }
@@ -250,19 +250,19 @@ class GroupsController extends BaseController {
 					}
 				}
 
-				// Check that guests id's exists
+				// Check that guests id's exist
 				const guests_list = await guests.find({
 					_id: { $in: body_guests },
 					deleted_at: { $exists: false },
 				})
 
 				const found_ids = guests_list.map((user) => user._id.toString())
-				const missing_ids = guests_list.filter(
+				const missing_ids = body_guests.filter(
 					(id: any) => !found_ids.includes(id)
 				)
 
-				if (missing_ids.length === 0) {
-					return this.respondInvalid(res, `Some ID's introduced doesn't exist`)
+				if (missing_ids.length > 0) {
+					return this.respondInvalid(res, `Some ID's introduced don't exist`)
 				}
 			}
 
@@ -272,11 +272,11 @@ class GroupsController extends BaseController {
 				updated_by: "Admin",
 			}
 
-			const group = await groups.findByIdAndUpdate(id, data)
+			const group = await groups.findByIdAndUpdate(id, data, { new: true })
 
 			if (!group) return this.respondInvalid(res, `Group not found`)
 
-			// Add to the guests the group we created if it has guests list
+			// Add the group ID to the guests if it has a guests list
 			if (body_guests.length) {
 				await guests.updateMany(
 					{
@@ -285,6 +285,17 @@ class GroupsController extends BaseController {
 					},
 					{ $set: { group: [id] } }
 				)
+
+				// Assign the table to guests if the group has a table
+				if (group.table) {
+					await guests.updateMany(
+						{
+							_id: { $in: body_guests },
+							deleted_at: { $exists: false },
+						},
+						{ $set: { table: group.table } }
+					)
+				}
 			}
 
 			return this.respondSuccess(res, `Success`, group)
